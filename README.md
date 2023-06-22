@@ -1,5 +1,7 @@
 # Animate 
 
+[Demo](https://fradav.github.io/quarto-revealjs-animate/example.html)
+
 A Revealjs plugin extension for animating svg, entirely based on [@rajgoel](https://github.com/rajgoel/reveal.js-plugins/
 
 :warning: Requires Quarto Version 1.2.124 or later :warning:
