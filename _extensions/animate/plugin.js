@@ -9,6 +9,7 @@
 **
 ******************************************************************/
 
+
 window.RevealAnimate = window.RevealAnimate || {
     id: 'RevealAnimate',
     init: function(deck) {
@@ -28,11 +29,11 @@ const initAnimate = function(Reveal){
 	var timer = null;
 	var initialized = 0;
 
-	function parseJSON(str) {
-	    str = str.replace(/(\r\n|\n|\r|\t)/gm,""); // remove line breaks and tabs
-	    var json;
+	function parseYAML(str) {
+	    // str = str.replace(/(\r\n|\n|\r|\t)/gm,""); // remove line breaks and tabs
+	    var yamlconf;
 	    try {
-        	json = JSON.parse(str, function (key, value) {
+        	yamlconf = jsyaml.load(str, function (key, value) {
     			if (value && (typeof value === 'string') && value.indexOf("function") === 0) {
 			        // we can only pass a function as string in JSON ==> doing a real function
 //			        eval("var jsFunc = " + value);
@@ -42,9 +43,10 @@ const initAnimate = function(Reveal){
 			return value;
 		});
 	    } catch (e) {
+		console.error("Error parsing YAML: " + e);
         	return null;
     		}
-            return json;
+            return yamlconf;
 	}
 
 	function load( element, config, filename, callback ) {
@@ -66,10 +68,10 @@ const initAnimate = function(Reveal){
 		var comments = element.innerHTML.trim().match(/<!--[\s\S]*?-->/g);
 //console.log(comments)
 		if ( comments !== null ) for (var k = 0; k < comments.length; k++ ){
-			comments[k] = comments[k].replace(/<!--/,'');
-			comments[k] = comments[k].replace(/-->/,'');
-			var config = parseJSON(comments[k]);
-//console.warn(comments[k], config);
+			comments[k] = comments[k].replace(/<!-- /,'');
+			comments[k] = comments[k].replace(/ -->/,'');
+			var config = parseYAML(comments[k]);
+// console.warn(comments[k], config);
 
 			if ( config ) {
 				if ( config.animation && Array.isArray(config.animation) && config.animation.length && !Array.isArray(config.animation[0]) ) {
@@ -105,6 +107,11 @@ const initAnimate = function(Reveal){
 		if ( setup ) {
 			for (var i = 0; i < setup.length; i++ ){
 				try {
+					if (setup[i].modifier.indexOf("function") === 0) {
+						// we can only pass a function as string in JSON ==> doing a real function
+						eval("var jsFunc = " + setup[i].modifier);
+						setup[i].modifier = jsFunc;
+					}
 					if ( setup[i].element ) {
 //console.log(setup[i].element,setup[i].modifier,setup[i].parameters);
 						var elements = container.svg.find(setup[i].element);
@@ -114,7 +121,7 @@ console.warn("Cannot find element to set up with selector: " + setup[i].element 
 
 //console.warn(elements);
 //console.log("element(" + setup[i].element + ")." + setup[i].modifier + "(" + setup[i].parameters + ")");
-//console.log("element(" + setup[i].element + ")." + setup[i].modifier + "(" + setup[i].parameters + ")");
+// console.log("element(" + setup[i].element + ")." + setup[i].modifier + "(" + setup[i].parameters + ")");
 						for (var j = 0; j < elements.length; j++ ){
 							if ( typeof setup[i].modifier === "function" ) {
 								// if modifier is function execute it
@@ -135,6 +142,7 @@ console.warn("Cannot find element to set up with selector: " + setup[i].element 
 						} 
 						else {
 							// apply modifier to root
+							// console.warn("Applying modifier to root element", setup[i].modifier, setup[i].parameters);
 							container.svg[setup[i].modifier].apply(container.svg,setup[i].parameters);
 						}
 					}				
@@ -151,6 +159,7 @@ console.warn("Cannot find element to set up with selector: " + setup[i].element 
 
 		// setup animation
 		var animations = config.animation;
+		// console.warn(animations);
 		if ( animations ) {
 
 			container.animationSchedule.length = animations.length;
